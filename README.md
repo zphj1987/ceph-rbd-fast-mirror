@@ -29,5 +29,9 @@ ceph-rbd-fast-mirror
 
 ### 预览图
 
-预览链接：
+已完成预览链接：
 https://raw.githubusercontent.com/zphj1987/ceph-rbd-fast-mirror/master/preview.MP4
+
+设计预览图：
+
+![](https://raw.githubusercontent.com/zphj1987/ceph-rbd-fast-mirror/master/原型设计/oringin.png)
