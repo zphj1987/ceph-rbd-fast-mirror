@@ -30,3 +30,4 @@ ceph-rbd-fast-mirror
 ### 预览图
 
 预览链接：
+https://raw.githubusercontent.com/zphj1987/ceph-rbd-fast-mirror/master/preview.MP4
