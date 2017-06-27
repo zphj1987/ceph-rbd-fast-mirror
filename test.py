@@ -10,24 +10,32 @@ import urwid
 import commands
 import urwid.raw_display
 
-
 ####################
 class PopUpDialog(urwid.WidgetWrap):
-    """A dialog that appears with nothing but a close button """
+    """保存按钮的弹出框 """
     signals = ['close']
+    def write_conf(self,content,object):     
+        writeconf=commands.getoutput('sed -i "s/%s=.*/%s=%s/g" /ceph.conf  2>/dev/null' %(object,object,content))    
     def __init__(self):
-        close_button = urwid.Button("that's pretty cool")
+
+        close_button = urwid.Button("返回")
         urwid.connect_signal(close_button, 'click',
             lambda button:self._emit("close"))
         pile = urwid.Pile([urwid.Text(
-            "^^  I'm attached to the widget that opened me. "
-            "Try resizing the window!\n"), close_button])
+            "保存成功"), close_button])
         fill = urwid.Filler(pile)
         self.__super.__init__(urwid.AttrWrap(fill, 'popbg'))
+        try:
+            if globals().has_key('myorinedit'):
+                self.write_conf(myorinedit,'originmon')
+            if globals().has_key('mydestedit'):
+                self.write_conf(mydestedit,'destmon')     
+        except:
+                pass        
 
 class ThingWithAPopUp(urwid.PopUpLauncher):
     def __init__(self):
-        self.__super.__init__(urwid.Button("click-me"))
+        self.__super.__init__(urwid.Button(u'保存配置'))
         urwid.connect_signal(self.original_widget, 'click',
             lambda button: self.open_pop_up())
 
@@ -38,7 +46,7 @@ class ThingWithAPopUp(urwid.PopUpLauncher):
         return pop_up
 
     def get_pop_up_parameters(self):
-        return {'left':0, 'top':1, 'overlay_width':32, 'overlay_height':7}
+        return {'left':5, 'top':5, 'overlay_width':20, 'overlay_height':4}
 
 ####################
 
@@ -60,21 +68,22 @@ def main():
         writeconf=commands.getoutput('sed -i "s/%s=.*/%s=%s/g" /ceph.conf  2>/dev/null' %(object,object,content))
     text_header = (u"欢迎使用fast copy  "
         u"可以使用 F8 exits.")
-    text_footer = (u"Welcome to the urwid tour!  "
-        u"UP / DOWN / PAGE UP / PAGE DOWN scroll.  jiao.")
-    text_intro = [('important', u"Text"),
+    text_footer = (u"Develop by 运维-武汉-磨渣 "
+        u"UP / DOWN / PAGE UP / PAGE DOWN scroll.")
+    text_intro = [
         u"本工具是用于快速的复制 "
         u"一个RBD到另外的一个集群的"]
     text_edit_origin_mon = ('editcp', u"输入原始ceph集群的monip: ")
+    zp=urwid.Padding(ThingWithAPopUp(), 'center', 15)
+
     text_edit_dest_mon = ('editcp', u"输入目标ceph集群的monip: ")
     text_edit_text1 = read_conf('originmon')
     text_edit_text2 = read_conf('destmon')
     
-    button = urwid.Button(u'保存配置')
     blank = urwid.Divider()
     editoriginmon=urwid.Edit(text_edit_origin_mon,text_edit_text1)
     editdestmon=urwid.Edit(text_edit_dest_mon,text_edit_text2)
-    savebutton=urwid.AttrWrap(button,'buttn')
+    newsavebutton=urwid.AttrWrap(zp,'buttn')
     listbox_content = [
         urwid.Padding(urwid.Text(text_intro), left=2, right=2, min_width=40),
         urwid.Padding(urwid.AttrWrap(editoriginmon,
@@ -83,21 +92,10 @@ def main():
         urwid.Padding(urwid.AttrWrap(editdestmon,
             'editbx', 'editfc'),left=2, width=50),
         blank,
-        urwid.Padding(savebutton,left=2,width=12),
+        urwid.Padding(newsavebutton,left=10,width=15),
         ]
 
 
-
-    def on_exit_clicked(button):
-#        raise urwid.ExitMainLoop()
-        try:
-            if globals().has_key('myorinedit'):
-                write_conf(myorinedit,'originmon')
-            if globals().has_key('mydestedit'):
-                write_conf(mydestedit,'destmon')  
-            ThingWithAPopUp()         
-        except:
-            pass
 
     def on_save_change(edit, edit_addr,mysave):
         if mysave == 'origin':
@@ -108,9 +106,6 @@ def main():
             mydestedit = edit_addr
 
         
-
-    
-    urwid.connect_signal(button, 'click', on_exit_clicked)
     urwid.connect_signal(editoriginmon, 'change', on_save_change,'origin')
     urwid.connect_signal(editdestmon, 'change', on_save_change,'dest')
 
@@ -121,7 +116,6 @@ def main():
     
 
     listbox = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-#    listbox = urwid.Filler(urwid.Padding(ThingWithAPopUp(), 'center', 15))
     frame = urwid.Frame(urwid.AttrWrap(listbox, 'body'), header=header,footer=footer)
 
     palette = [
