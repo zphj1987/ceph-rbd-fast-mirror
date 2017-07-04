@@ -5,7 +5,7 @@
 """
 Urwid tour.  Shows many of the standard widget types and features.
 """
-import os
+import os,ast
 import urwid
 import commands
 import urwid.raw_display
@@ -15,7 +15,7 @@ class PopUpDialog(urwid.WidgetWrap):
     """保存按钮的弹出框 """
     signals = ['close']
     def write_conf(self,content,object):     
-        writeconf=commands.getoutput('sed -i "s/%s=.*/%s=%s/g" /ceph.conf  2>/dev/null' %(object,object,content))    
+        writeconf=commands.getoutput('sed -i "s/%s=.*/%s=%s/g" /ceph.conf  2>/dev/null' %(object,object,content))
     def __init__(self):
 
         close_button = urwid.Button("返回")
@@ -29,7 +29,15 @@ class PopUpDialog(urwid.WidgetWrap):
             if globals().has_key('myorinedit'):
                 self.write_conf(myorinedit,'originmon')
             if globals().has_key('mydestedit'):
-                self.write_conf(mydestedit,'destmon')     
+                self.write_conf(mydestedit,'destmon')
+            if globals().has_key('mypool'):
+                self.write_conf(mypool,'pool')
+            if globals().has_key('myrbd'):
+                self.write_conf(myrbd,'rbd')
+            if globals().has_key('mymd5'):
+                self.write_conf(mymd5,'md5')
+            if globals().has_key('mythread'):
+                self.write_conf(mythread,'thread')      
         except:
                 pass        
 
@@ -58,8 +66,7 @@ def main():
         """
         getconf=commands.getoutput('ceph-conf --lookup -c /ceph.conf %s 2>/dev/null' %object)
         return getconf
-    
-    
+       
     def write_conf(content,object):
         """
         写入配置文件：
@@ -74,16 +81,38 @@ def main():
         u"本工具是用于快速的复制 "
         u"一个RBD到另外的一个集群的"]
     text_edit_origin_mon = ('editcp', u"输入原始ceph集群的monip: ")
-    zp=urwid.Padding(ThingWithAPopUp(), 'center', 15)
-
     text_edit_dest_mon = ('editcp', u"输入目标ceph集群的monip: ")
+    text_edit_dest_pool = ('editcp', u"输入存储池: ")
+    text_edit_dest_rbd = ('editcp', u"输入RBD Image Name: ")
+
     text_edit_text1 = read_conf('originmon')
     text_edit_text2 = read_conf('destmon')
-    
+    text_edit_text3 = read_conf('pool')
+    text_edit_text4 = read_conf('rbd')
+
+    text_edit_thread = ('editcp', u"并发数: ")
+    text_edit_text5 = read_conf('thread')
+
+
+
+    zp=urwid.Padding(ThingWithAPopUp(), 'center', 15)
+    checkbox_md5_choose = ast.literal_eval(read_conf('md5'))
+    text_cb_list = [u"Wax", u"Wash", u"Buff", u"Clear Coat", u"Dry",
+        u"Racing Stripe"]
+    checkbox_md5="md5记录" 
+
     blank = urwid.Divider()
     editoriginmon=urwid.Edit(text_edit_origin_mon,text_edit_text1)
     editdestmon=urwid.Edit(text_edit_dest_mon,text_edit_text2)
+    editdestpool=urwid.Edit(text_edit_dest_pool,text_edit_text3)
+    editdestrbd=urwid.Edit(text_edit_dest_rbd,text_edit_text4)
+
     newsavebutton=urwid.AttrWrap(zp,'buttn')
+
+    md5cb=urwid.CheckBox(checkbox_md5,checkbox_md5_choose)
+    editthread=urwid.Edit(text_edit_thread,text_edit_text5)
+
+
     listbox_content = [
         urwid.Padding(urwid.Text(text_intro), left=2, right=2, min_width=40),
         urwid.Padding(urwid.AttrWrap(editoriginmon,
@@ -92,9 +121,19 @@ def main():
         urwid.Padding(urwid.AttrWrap(editdestmon,
             'editbx', 'editfc'),left=2, width=50),
         blank,
+        urwid.Padding(urwid.AttrWrap(editdestpool,
+            'editbx', 'editfc'),left=2, width=50),
+        blank,
+        urwid.Padding(urwid.AttrWrap(editdestrbd,
+            'editbx', 'editfc'),left=2, width=50),
+        blank,
         urwid.Padding(newsavebutton,left=10,width=15),
+        urwid.AttrWrap(urwid.Divider("-", 1), 'bright'),
+        urwid.GridFlow([urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12),
+        urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12)],13, 3, 1, 'left'),
+        urwid.Padding(urwid.AttrWrap(editthread,
+            'editbx', 'editfc'),left=2, width=20),
         ]
-
 
 
     def on_save_change(edit, edit_addr,mysave):
@@ -104,11 +143,26 @@ def main():
         elif mysave == 'dest':
             global mydestedit
             mydestedit = edit_addr
+        elif mysave == 'pool':
+            global mypool
+            mypool = edit_addr
+        elif mysave == 'rbd':
+            global myrbd
+            myrbd = edit_addr
+        elif mysave == 'md5':
+            global mymd5
+            mymd5 = edit_addr
+        elif mysave == 'thread':
+            global mythread
+            mythread = edit_addr
 
         
     urwid.connect_signal(editoriginmon, 'change', on_save_change,'origin')
     urwid.connect_signal(editdestmon, 'change', on_save_change,'dest')
-
+    urwid.connect_signal(editdestpool, 'change', on_save_change,'pool')    
+    urwid.connect_signal(editdestrbd, 'change', on_save_change,'rbd')
+    urwid.connect_signal(md5cb, 'change', on_save_change,'md5')
+    urwid.connect_signal(editthread, 'change', on_save_change,'thread')
 
     #AttrWrap是用来给文本设置颜色，属性
     header = urwid.AttrWrap(urwid.Text(text_header), 'header')
