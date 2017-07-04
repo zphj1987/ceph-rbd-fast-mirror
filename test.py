@@ -60,13 +60,16 @@ class ThingWithAPopUp(urwid.PopUpLauncher):
 
 def main():
 
-    def read_conf(object):
+    def read_conf(object,type):
         """
         读取目标配置文件传入的是要读取的配置文件
         """
-        getconf=commands.getoutput('ceph-conf --lookup -c /ceph.conf %s 2>/dev/null' %object)
-        return getconf
-       
+        if type == "conf":
+            getconf=commands.getoutput('ceph-conf --lookup -c /ceph.conf %s 2>/dev/null' %object)
+            return getconf
+        if type == "getlist":
+            getcount=commands.getoutput('cat %s|wc -l 2>/dev/null' %object)
+            return getcount
     def write_conf(content,object):
         """
         写入配置文件：
@@ -85,20 +88,20 @@ def main():
     text_edit_dest_pool = ('editcp', u"输入存储池: ")
     text_edit_dest_rbd = ('editcp', u"输入RBD Image Name: ")
 
-    text_edit_text1 = read_conf('originmon')
-    text_edit_text2 = read_conf('destmon')
-    text_edit_text3 = read_conf('pool')
-    text_edit_text4 = read_conf('rbd')
+    text_edit_text1 = read_conf('originmon','conf')
+    text_edit_text2 = read_conf('destmon','conf')
+    text_edit_text3 = read_conf('pool','conf')
+    text_edit_text4 = read_conf('rbd','conf')
 
     text_edit_thread = ('editcp', u"并发数: ")
-    text_edit_text5 = read_conf('thread')
-
-
+    text_edit_text5 = read_conf('thread','conf')
+    text_getcont = read_conf('/getlist','getlist')
+    text_getcont = [('important', u"原始RBD对象数目： "),
+        u"%s" %text_getcont]
 
     zp=urwid.Padding(ThingWithAPopUp(), 'center', 15)
-    checkbox_md5_choose = ast.literal_eval(read_conf('md5'))
-    text_cb_list = [u"Wax", u"Wash", u"Buff", u"Clear Coat", u"Dry",
-        u"Racing Stripe"]
+    checkbox_md5_choose = ast.literal_eval(read_conf('md5','conf'))
+
     checkbox_md5="md5记录" 
 
     blank = urwid.Divider()
@@ -111,8 +114,7 @@ def main():
 
     md5cb=urwid.CheckBox(checkbox_md5,checkbox_md5_choose)
     editthread=urwid.Edit(text_edit_thread,text_edit_text5)
-
-
+    getobjectcount=urwid.Text(text_getcont)
     listbox_content = [
         urwid.Padding(urwid.Text(text_intro), left=2, right=2, min_width=40),
         urwid.Padding(urwid.AttrWrap(editoriginmon,
@@ -129,10 +131,14 @@ def main():
         blank,
         urwid.Padding(newsavebutton,left=10,width=15),
         urwid.AttrWrap(urwid.Divider("-", 1), 'bright'),
-        urwid.GridFlow([urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12),
-        urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12)],13, 3, 1, 'left'),
-        urwid.Padding(urwid.AttrWrap(editthread,
-            'editbx', 'editfc'),left=2, width=20),
+
+        urwid.AttrWrap(urwid.Divider("-", 1), 'bright'),
+
+#        urwid.GridFlow([urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12),
+#        urwid.Padding(urwid.AttrWrap(md5cb, 'buttn','buttnf'),left=4, right=3, width=12)],13, 3, 1, 'left'),
+#        urwid.Padding(urwid.AttrWrap(editthread,
+#            'editbx', 'editfc'),left=2, width=20),
+        urwid.Padding(getobjectcount,left=2, width=50),
         ]
 
 
